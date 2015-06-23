@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ $# -ne 1 ]
+then
+    echo "usage: $0 amount"
+    exit 1
+fi
+
+pactl set-sink-volume 1 "$1" && pactl set-sink-mute 1 off
