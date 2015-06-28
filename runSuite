@@ -11,6 +11,11 @@ if [ $# -ne 2 ]; then
   exit 1
 fi
 
+if [ ! -x $2 ]; then
+    echo "Cannot execute or find $2"
+    exit 3
+fi
+
 for test in $(cat $1); do
   if [ ! -f "${test}.in" ] || [ ! -r "${test}.in" ]; then
     echo "Cannnot find ${test}.in, or it is not a file" 1>&2
