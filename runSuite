@@ -3,13 +3,22 @@
 # by Patrick Melanson
 
 usage () {
-  echo "usage: $0 suite-file program" 1>&2
+    echo "usage: $0 suite-file program" 1>&2
 }
 
 if [ $# -ne 2 ]; then
-  usage
-  exit 1
+    usage
+    exit 1
 fi
+
+tmpfilestodelete=""
+
+cleanup() {
+    rm -f "$tmpfilestodelete"
+    return $?
+}
+
+trap cleanup SIGINT
 
 if [ ! -x $2 ]; then
     echo "Cannot execute or find $2"
@@ -17,38 +26,44 @@ if [ ! -x $2 ]; then
 fi
 
 for test in $(cat $1); do
-  if [ ! -f "${test}.in" ] || [ ! -r "${test}.in" ]; then
-    echo "Cannnot find ${test}.in, or it is not a file" 1>&2
-    exit 2
-  fi
-  if [ ! -f "${test}.out" ] || [ ! -r "${test}.out" ]; then
-    echo "Cannot find ${test}.out, or it is not a file" 1>&2
-    exit 2
-  fi
+    if [ ! -f "${test}.in" ] || [ ! -r "${test}.in" ]; then
+        echo "Cannnot find ${test}.in, or it is not a file" 1>&2
+        exit 2
+    fi
+    if [ ! -f "${test}.out" ] || [ ! -r "${test}.out" ]; then
+        echo "Cannot find ${test}.out, or it is not a file" 1>&2
+        exit 2
+    fi
 
-  tmpfile=$(mktemp)
+    tmpfile="$(mktemp --suffix=$test)"
+    tmpfilestodelete="$tmpfilestodelete $tmpfile"
 
-  if [ -f "${test}.args" ]; then
-    $2 $(cat "${test}.args") < "${test}.in" > $tmpfile
-  else
-    $2 < "${test}.in" > $tmpfile
-  fi
+    if [ -f "${test}.args" ]; then
+        $2 $(cat "${test}.args") < "${test}.in" > $tmpfile
+    else
+        $2 < "${test}.in" > $tmpfile
+    fi
 
-  if [ "$(cmp $tmpfile ${test}.out)" != "" ]; then
-    echo "Test failed: $test"
-    echo "-------"
-    echo "Input:"
-    cat "${test}.in"
-    echo "-------"
-    echo "Expected:"
-    cat "${test}.out"
-    echo "-------"
-    echo "Actual:"
-    cat $tmpfile
-    echo "-------"
-    echo "Diff:"
-    diff "${test}.out" $tmpfile
-    echo "===================================="
-  fi
-  rm $tmpfile
+    if [ "$(cmp $tmpfile ${test}.out)" != "" ]; then
+        echo "Test failed: $test"
+        echo "-------"
+        echo "Input:"
+        cat "${test}.in"
+        echo "-------"
+        echo "Expected:"
+        cat "${test}.out"
+        echo "-------"
+        echo "Actual:"
+        cat $tmpfile
+        echo "-------"
+        echo "Diff:"
+        diff "${test}.out" $tmpfile
+        echo "===================================="
+    fi
+    rm -f $tmpfile
+    rmretval=$?
+    if [ $rmretval -ne 0 ]; then
+        echo "rm $tmpfile returned $rmretval"
+    fi
+    tmpfilestodelete=${tmpfilestodelete/$tmpfile/}  # don't try deleting again
 done
