@@ -26,25 +26,28 @@ if [ ! -x $2 ]; then
 fi
 
 for test in $(cat $1); do
-    if [ ! -f "${test}.in" ] || [ ! -r "${test}.in" ]; then
-        echo "Cannnot find ${test}.in, or it is not a file" 1>&2
+    prefix=$(dirname "$1")
+    if [ ! -f "${prefix}/${test}.in" ] || [ ! -r "${prefix}/${test}.in" ]; then
+        echo "Cannnot find ${prefix}/${test}.in, or it is not a file" 1>&2
         exit 2
     fi
-    if [ ! -f "${test}.out" ] || [ ! -r "${test}.out" ]; then
-        echo "Cannot find ${test}.out, or it is not a file" 1>&2
+    if [ ! -f "${prefix}/${test}.out" ] || [ ! -r "${prefix}/${test}.out" ]; then
+        echo "Cannot find ${prefix}/${test}.out, or it is not a file" 1>&2
         exit 2
     fi
 
     tmpfile="$(mktemp --suffix=$test)"
     tmpfilestodelete="$tmpfilestodelete $tmpfile"
 
-    if [ -f "${test}.args" ]; then
-        $2 $(cat "${test}.args") < "${test}.in" > $tmpfile
+    if [ -f "${prefix}/${test}.args" ]; then
+        $2 $(cat "${prefix}/${test}.args") < "${prefix}/${test}.in" > $tmpfile
     else
-        $2 < "${test}.in" > $tmpfile
+        $2 < "${prefix}/${test}.in" > $tmpfile
     fi
 
-    if [ "$(cmp $tmpfile ${test}.out)" != "" ]; then
+    echo "Running ${test}"
+
+    if [ "$(cmp $tmpfile ${prefix}/${test}.out)" != "" ]; then
         echo "Test failed: $test"
         echo "-------"
         echo "Input:"
