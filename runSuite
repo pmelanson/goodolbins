@@ -51,16 +51,16 @@ for test in $(cat $1); do
         echo "Test failed: $test"
         echo "-------"
         echo "Input:"
-        cat "${test}.in"
+        cat "${prefix}/${test}.in"
         echo "-------"
         echo "Expected:"
-        cat "${test}.out"
+        cat "${prefix}/${test}.out"
         echo "-------"
         echo "Actual:"
         cat $tmpfile
         echo "-------"
         echo "Diff:"
-        diff "${test}.out" $tmpfile
+        diff "${prefix}/${test}.out" $tmpfile
         echo "===================================="
     fi
     rm -f $tmpfile
